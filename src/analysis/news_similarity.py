@@ -16,24 +16,30 @@ class TextSimilarity():
         self.__news_to_check = news_to_check
 
     def get_similar_news(self):
-        self.data_preprocessing()
+        self.preprocessing_dataframe()
 
         dictionary = self.create_bag_of_words()
         corpus = self.vectorizing_titles(dictionary)
-        most_relevant_news = self.calculate_news_similarity(dictionary, corpus)
+        sort_similar_texts = self.calculate_news_similarity(dictionary, corpus)
+        most_relevant_news = self.threshold_determination(sort_similar_texts)
         return most_relevant_news
 
-    def data_preprocessing(self) -> pd.DataFrame:
-        self.tokenizer()
+
+    def preprocessing_dataframe(self):
+        self.__data["tokens"] = self.__data["title"].apply(self.row_preprocessing)
+
+
+    def row_preprocessing(self,row:str) -> str:
+        preprocessed_row = self.tokenizer(row)
         # сюда можно добавить дополнительных методов предобработки данных
         # TODO: для улучшения данных стоит удалить стоп словаnews_to_check
 
-    def tokenizer(self) -> pd.DataFrame:
-        self.__data["tokens"] = self.__data["title"].apply(self.tokenize_every_line)
+        return preprocessed_row
 
-    def tokenize_every_line(self, string: str) -> Union[list,str]:
+
+    def tokenizer(self, row: str) -> Union[list,str]:
         try:
-            tokens = list(tokenize(string, lowercase=True, deacc=True, ))
+            tokens = list(tokenize(row, lowercase=True, deacc=True, ))
             # morph = pymorphy2.MorphAnalyzer()
             # for i,token in enumerate(tokens):
             #     print(token)
@@ -64,7 +70,7 @@ class TextSimilarity():
     def calculate_news_similarity(self, dictionary:dict, corpus:list) -> str:
         feature_cnt = len(dictionary.token2id)
         tf_idf, index = self.initialize_similarity_matrix(corpus, feature_cnt)
-        kw_vector = self.tokenize_one_new(dictionary)
+        kw_vector = self.vectorize_new_to_check(dictionary)
         most_relevant_news = self.compare_news(tf_idf, index, kw_vector)
         return most_relevant_news
 
@@ -73,9 +79,9 @@ class TextSimilarity():
         index = SparseMatrixSimilarity(tf_idf[corpus], num_features=feature_cnt)
         return tf_idf, index
 
-    # стоит объединить с общим токенизатором
-    def tokenize_one_new(self, dictionary: dict) -> list:
-        kw_vector = dictionary.doc2bow(tokenize(self.__news_to_check))
+    def vectorize_new_to_check(self, dictionary: dict) -> list:
+        preprocessed_new = self.row_preprocessing(self.__news_to_check)
+        kw_vector = dictionary.doc2bow(preprocessed_new)
         return kw_vector
 
     def compare_news(self, tf_idf: models.TfidfModel, index: SparseMatrixSimilarity, kw_vector: list) -> str:
@@ -85,7 +91,33 @@ class TextSimilarity():
 
         # print(sort_similar_texts)
         # print(sort_similar_texts.iloc[1]['title'])
-        return sort_similar_texts.iloc[1]['title']
+        # return sort_similar_texts.iloc[1]['title']
+        return sort_similar_texts
+
+    def threshold_determination(self,sort_similar_texts:pd.DataFrame) -> pd.DataFrame:
+        max_num_to_check = 5
+        duplicate_threshold = 0.95
+        similarity_threshold = 0.11
+
+        num = 0
+        while num <= max_num_to_check:
+            probability = sort_similar_texts.iloc[num]['compare']
+
+            # добавить проверку по ключевым словам еще ОБЯЗАТЕЛЬНО
+            isNotDublicat = probability < duplicate_threshold
+            isSimilar = probability > similarity_threshold
+
+            if isNotDublicat and isSimilar:
+                print(sort_similar_texts.iloc[num]['compare'])
+                # print(sort_similar_texts.iloc[num]['title'])
+                return sort_similar_texts.iloc[num]['title']
+
+            num += 1
+
+
+
+
+        return ' '
     
     @property
     def data(self):
@@ -95,15 +127,4 @@ class TextSimilarity():
     def new(self):
         return self.__news_to_check
 
-if __name__ == '__main__':
-    test_new = 'Криптобиржа Binance выпустит благотворительную карту для украинских беженцев'
 
-    file_name = 'test_file_db.csv'
-    data = pd.read_csv(file_name)
-
-    sim = TextSimilarity(data, test_new)
-    # сейчас мы каждый раз высчитываем все векторные представления по новой
-    most_relevant_news = sim.get_similar_news()
-
-    print('Новость: ' + test_new)
-    print('Наиболее похожая на нее: ' + most_relevant_news)

@@ -50,7 +50,7 @@ class DataBase():
     def save_data_to_file(self,data):
         print(data)
 
-        data.to_csv('test_file_db.csv',index=False)
+        data.to_csv('test_file_db2.csv',index=False)
         print('Successfully saved')
 
     def save_data_to_db(self):
@@ -78,9 +78,9 @@ class DataBase():
 
 
         # сохраняем данные в бд
-        self.create_db()
-        self.save_data_to_db()
-        self.check_db()
+        # self.create_db()
+        # self.save_data_to_db()
+        # self.check_db()
         print('Complete')
 
 
@@ -88,24 +88,24 @@ if __name__ == '__main__':
     # тут не импортирован конфиг
     # cfg = Config('local')
 
-    # r = redis.Redis(
-    #     host="127.0.0.1",
-    #     port=6379,
-    #     db=2
-    # )
+    r = redis.Redis(
+        host="127.0.0.1",
+        port=6379,
+        db=2
+    )
 
 
-    conn = psycopg2.connect(dbname='test_news_db', user='db_user',
-                            password='pass', host="127.0.0.1")
-    cursor = conn.cursor()
+    # conn = psycopg2.connect(dbname='test_news_db', user='db_user',
+    #                         password='pass', host="127.0.0.1")
+    # cursor = conn.cursor()
+    #
 
 
-
-    # db = DataBase(, r)
-    db = DataBase(cursor)
+    db = DataBase( r)
+    # db = DataBase(cursor)
     db.main()
-
-    conn.commit()
-    cursor.close()
-
-    conn.close()
+    #
+    # conn.commit()
+    # cursor.close()
+    #
+    # conn.close()

@@ -1,16 +1,30 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+# from src.config import Config
+from src.analysis.news_similarity import TextSimilarity
+import pandas as pd
 
 
-# Press the green button in the gutter to run the script.
+
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    # конфиг читаем с консоли
+    # cfg = Config('local')
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+
+    test_new = 'Цены на нефть завершили предпраздничные торги активным ростом'
+
+    file_name = 'src/analysis/test_file_db.csv'
+    data = pd.read_csv(file_name)
+
+    for new in data.index:
+        test_new = data.iloc[new]['title']
+
+        sim = TextSimilarity(data, test_new)
+        # сейчас мы каждый раз высчитываем все векторные представления по новой
+        most_relevant_news = sim.get_similar_news()
+
+        print('Новость: ' + test_new)
+        print('Наиболее похожая на нее: ' + most_relevant_news)
+        print('=====')
+
+
+
